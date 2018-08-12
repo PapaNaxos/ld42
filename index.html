@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.0.0/dist/phaser.min.js"></script>
+    <script src="phaser.min.js"></script>
 </head>
 <body>
 
+	<h2>Running out of space</h2>
     <script>
     var config = {
         type: Phaser.AUTO,
@@ -13,7 +14,7 @@
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 200 }
+                gravity: { y: 0 }
             }
         },
         scene: {
@@ -36,9 +37,56 @@
 
     function create ()
     {
-		var map = this.make.tilemap({key: 'map'});
+		var map = this.make.tilemap({
+			//key: 'map',
+			tileWidth: 16,
+			tileHeight: 16,
+			width: 100,
+			height: 100
+		});
 
-		map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
+		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
+
+		var testLayer = map.createBlankDynamicLayer('main_layer', tileset);
+
+		var indexes = {
+			TOPL: 0,
+			TOPC: 1,
+			TOPR: 2,
+			LEFT: 4,
+			FLOOR: 5,
+			RIGHT: 6,
+			BOTL:  8,
+			BOTC: 9,
+			BOTR: 10
+		};
+
+		for (var i = 0; i < 8; ++i)
+		{
+			var rw = Phaser.Math.RND.between(3,5) * 2;
+			var rh = Phaser.Math.RND.between(3,5) * 2;
+			var rx = Phaser.Math.RND.between(0, 40 - rw);
+			var ry = Phaser.Math.RND.between(0, 40 - rh);
+
+			// corners
+			testLayer.putTileAt(indexes.TOPL, rx,          ry);
+			testLayer.putTileAt(indexes.TOPR, rx + rw - 1, ry);
+			testLayer.putTileAt(indexes.BOTL, rx,          ry + rh - 1);
+			testLayer.putTileAt(indexes.BOTR, rx + rw - 1, ry + rh - 1);
+
+			// sides
+			testLayer.fill(indexes.TOPC,  rx+1,             ry, rw-2,    1);
+			testLayer.fill(indexes.LEFT,  rx,             ry+1,    1, rh-2);
+			testLayer.fill(indexes.RIGHT, rx+rw-1,        ry+1,    1, rh-2);
+			testLayer.fill(indexes.BOTC,  rx+1,    ry + rh - 1, rw-2,    1);
+
+			// gooey center
+			testLayer.fill(indexes.FLOOR, rx+1, ry+1, rw-2, rh-2);
+		}
+
+		//this.add.image(32, 32, 'image_tiles');
+
+		//this.add.image(132, 232, 'image_tiles');
         //this.add.image(400, 300, 'sky');
 
         //var particles = this.add.particles('red');
