@@ -37,52 +37,92 @@
 
     function create ()
     {
-		var map = this.make.tilemap({
-			//key: 'map',
-			tileWidth: 16,
-			tileHeight: 16,
-			width: 100,
-			height: 100
-		});
+		var lvl = [
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0],
+			[0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0],
+			[0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		];
 
-		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
 
-		var testLayer = map.createBlankDynamicLayer('main_layer', tileset);
+		var map = tilemapFromLevel(this, lvl);
+		//var mapCam = this.cameras.add(600,0,200,150, false, 'map-cam');
+		//mapCam.setZoom(0.1);
+		//mapCam.setBackgroundColor('#f00');
 
-		var indexes = {
-			TOPL: 0,
-			TOPC: 1,
-			TOPR: 2,
-			LEFT: 4,
-			FLOOR: 5,
-			RIGHT: 6,
-			BOTL:  8,
-			BOTC: 9,
-			BOTR: 10
-		};
-
-		for (var i = 0; i < 8; ++i)
-		{
-			var rw = Phaser.Math.RND.between(3,5) * 2;
-			var rh = Phaser.Math.RND.between(3,5) * 2;
-			var rx = Phaser.Math.RND.between(0, 40 - rw);
-			var ry = Phaser.Math.RND.between(0, 40 - rh);
-
-			// corners
-			testLayer.putTileAt(indexes.TOPL, rx,          ry);
-			testLayer.putTileAt(indexes.TOPR, rx + rw - 1, ry);
-			testLayer.putTileAt(indexes.BOTL, rx,          ry + rh - 1);
-			testLayer.putTileAt(indexes.BOTR, rx + rw - 1, ry + rh - 1);
-
-			// sides
-			testLayer.fill(indexes.TOPC,  rx+1,             ry, rw-2,    1);
-			testLayer.fill(indexes.LEFT,  rx,             ry+1,    1, rh-2);
-			testLayer.fill(indexes.RIGHT, rx+rw-1,        ry+1,    1, rh-2);
-			testLayer.fill(indexes.BOTC,  rx+1,    ry + rh - 1, rw-2,    1);
-
-			// gooey center
-			testLayer.fill(indexes.FLOOR, rx+1, ry+1, rw-2, rh-2);
-		}
+//		var map = this.make.tilemap({
+//			//key: 'map',
+//			tileWidth: 16,
+//			tileHeight: 16,
+//			width: 100,
+//			height: 100
+//		});
+//
+//		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
+//
+//		var testLayer = map.createBlankDynamicLayer('main_layer', tileset);
+//		testLayer.setScaleMode(Phaser.ScaleModes.NEAREST);
+//
+//		var indexes = {
+//			TOPL: 0,
+//			TOPC: 1,
+//			TOPR: 2,
+//			LEFT: 8,
+//			FLOOR: 9,
+//			RIGHT: 10,
+//			BOTL:  16,
+//			BOTC: 17,
+//			BOTR: 18,
+//
+//			CORNERTL: 4,
+//			CORNERTR: 5,
+//			CORNERBL: 12,
+//			CORNERBR: 13
+//		};
+//
+//		for (var i = 0; i < 8; ++i)
+//		{
+//			var rw = Phaser.Math.RND.between(3,5) * 2;
+//			var rh = Phaser.Math.RND.between(3,5) * 2;
+//			var rx = Phaser.Math.RND.between(0, 30 - rw);
+//			var ry = Phaser.Math.RND.between(0, 30 - rh);
+//
+//			// corners
+//			testLayer.putTileAt(indexes.TOPL, rx,          ry);
+//			testLayer.putTileAt(indexes.TOPR, rx + rw - 1, ry);
+//			testLayer.putTileAt(indexes.BOTL, rx,          ry + rh - 1);
+//			testLayer.putTileAt(indexes.BOTR, rx + rw - 1, ry + rh - 1);
+//
+//			// sides
+//			testLayer.fill(indexes.TOPC,  rx+1,         ry, rw-2,    1);
+//			testLayer.fill(indexes.LEFT,  rx,         ry+1,    1, rh-2);
+//			testLayer.fill(indexes.RIGHT, rx+rw-1,    ry+1,    1, rh-2);
+//			testLayer.fill(indexes.BOTC,  rx+1,    ry+rh-1, rw-2,    1);
+//
+//			// gooey center
+//			testLayer.fill(indexes.FLOOR, rx+1, ry+1, rw-2, rh-2);
+//
+//			testLayer.putTileAt(indexes.CORNERBL, rx+rw-1, ry+1);
+//			testLayer.putTileAt(indexes.FLOOR, rx+rw-1, ry+2);
+//			testLayer.putTileAt(indexes.CORNERTL, rx+rw-1, ry+3);
+//		}
 
 		//this.add.image(32, 32, 'image_tiles');
 
@@ -105,6 +145,147 @@
 
         //emitter.startFollow(logo);
     }
+
+	// caveat: outer 'ring' of 2d lvl array must be zeroes to render correctly
+	function tilemapFromLevel(scene, lvl)
+	{
+		var mapWidth = lvl[0].length * 2;
+		var mapHeight = lvl[0].length * 2;
+
+		var map = scene.make.tilemap({
+			//key: 'map',
+			tileWidth: 16,
+			tileHeight: 16,
+			width: mapWidth,
+			height: mapHeight
+		});
+
+		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
+
+		var testLayer = map.createBlankDynamicLayer('walls', tileset);
+		testLayer.setScaleMode(Phaser.ScaleModes.NEAREST);
+
+		var indexes = {
+			TOPL: 0,
+			TOPC: 1,
+			TOPR: 2,
+			LEFT: 8,
+			FLOOR: 9,
+			RIGHT: 10,
+			BOTL:  16,
+			BOTC: 17,
+			BOTR: 18,
+
+			CORNERTL: 4,
+			CORNERTR: 5,
+			CORNERBL: 12,
+			CORNERBR: 13
+		};
+
+		var hasUp = function(lvl, c, r) {
+			return (r > 0) ? lvl[r-1][c] == 1 : false;
+		};
+		var hasLeft = function(lvl, c, r) {
+			return (c > 0) ? lvl[r][c-1] == 1 : false;
+		};
+		var hasDown = function(lvl, c, r) {
+			return (r < lvl.length-2) ? lvl[r+1][c] == 1 : false;
+		};
+		var hasRight = function(lvl, c, r) {
+			return (c < lvl[r].length-2) ? lvl[r][c+1] == 1 : false;
+		};
+		//for checking corners
+		var isFloor = function(lvl, c, r) {
+			return (c >= 0 && c < lvl[0].length && r >= 0 && r < lvl.length) ? lvl[r][c] == 1: false;
+		};
+
+		var tl_corner_options = [ indexes.BOTC, indexes.RIGHT, indexes.CORNERTL, indexes.BOTR ];
+		var tr_corner_options = [ indexes.BOTC, indexes.LEFT, indexes.CORNERTR, indexes.BOTL ];
+		var bl_corner_options = [ indexes.TOPC, indexes.RIGHT, indexes.CORNERBL, indexes.TOPR ];
+		var br_corner_options = [ indexes.TOPC, indexes.LEFT, indexes.CORNERBR, indexes.TOPL ];
+
+		var evalWallTile = function( options, surround ) {
+			if (surround[0] && surround[1])
+				return options[2];
+
+			else if (surround[0])
+				return options[0];
+
+			else if (surround[1])
+				return options[1];
+
+			else if (surround[2])
+				return options[3];
+			
+			else
+				return null;
+		};
+
+		for (var y = 0; y < lvl.length; ++y)
+		{
+			for (var x = 0; x < lvl[0].length; ++x)
+			{
+				if ( lvl[y][x] == 1 )
+				{
+					testLayer.fill(indexes.FLOOR, x*2, y*2, 2, 2);
+				}
+				else if ( lvl[y][x] == 0 )
+				{
+					var mapx = x*2;
+					var mapy = y*2;
+
+					var u = hasUp(lvl, x, y);
+					var d = hasDown(lvl, x, y);
+					var l = hasLeft(lvl, x, y);
+					var r = hasRight(lvl, x, y);
+
+					var tile = evalWallTile( tl_corner_options, [u, l, isFloor(lvl, x-1, y-1)] );
+					if (tile !== null)
+						testLayer.putTileAt( tile, mapx, mapy );
+
+					tile = evalWallTile( tr_corner_options, [u, r, isFloor(lvl, x+1, y-1)] );
+					if (tile !== null)
+						testLayer.putTileAt( tile, mapx+1, mapy );
+
+					tile = evalWallTile( bl_corner_options, [d, l, isFloor(lvl, x-1, y+1)] );
+					if (tile !== null)
+						testLayer.putTileAt( tile, mapx, mapy+1 );
+
+					tile = evalWallTile( br_corner_options, [d, r, isFloor(lvl, x+1, y+1)] );
+					if (tile !== null)
+						testLayer.putTileAt( tile, mapx+1, mapy+1 );
+				}
+			}
+		}
+
+//		for (var i = 0; i < 8; ++i)
+//		{
+//			var rw = Phaser.Math.RND.between(3,5) * 2;
+//			var rh = Phaser.Math.RND.between(3,5) * 2;
+//			var rx = Phaser.Math.RND.between(0, 30 - rw);
+//			var ry = Phaser.Math.RND.between(0, 30 - rh);
+//
+//			// corners
+//			testLayer.putTileAt(indexes.TOPL, rx,          ry);
+//			testLayer.putTileAt(indexes.TOPR, rx + rw - 1, ry);
+//			testLayer.putTileAt(indexes.BOTL, rx,          ry + rh - 1);
+//			testLayer.putTileAt(indexes.BOTR, rx + rw - 1, ry + rh - 1);
+//
+//			// sides
+//			testLayer.fill(indexes.TOPC,  rx+1,         ry, rw-2,    1);
+//			testLayer.fill(indexes.LEFT,  rx,         ry+1,    1, rh-2);
+//			testLayer.fill(indexes.RIGHT, rx+rw-1,    ry+1,    1, rh-2);
+//			testLayer.fill(indexes.BOTC,  rx+1,    ry+rh-1, rw-2,    1);
+//
+//			// gooey center
+//			testLayer.fill(indexes.FLOOR, rx+1, ry+1, rw-2, rh-2);
+//
+//			testLayer.putTileAt(indexes.CORNERBL, rx+rw-1, ry+1);
+//			testLayer.putTileAt(indexes.FLOOR, rx+rw-1, ry+2);
+//			testLayer.putTileAt(indexes.CORNERTL, rx+rw-1, ry+3);
+//		}
+		return map;
+	}
     </script>
 
 </body>
