@@ -30,11 +30,6 @@
     {
 		this.load.image('image_tiles', 'tiles_x2.png');
 		this.load.image('swarm', 'swarm.png');
-        //this.load.setBaseURL('http://labs.phaser.io');
-
-        //this.load.image('sky', 'assets/skies/space3.png');
-        //this.load.image('logo', 'assets/sprites/phaser3-logo.png');
-        //this.load.image('red', 'assets/particles/red.png');
     }
 
 	var cursors = null;
@@ -68,97 +63,12 @@
 
 		var map = tilemapFromLevel(this, lvl);
 
-		//player = this.add.image(140, 100, 'swarm');
 		player = this.physics.add.image(140, 100, 'swarm');
 		this.physics.add.collider(player.body, map.getLayer('walls'));
 
-		//this.cameras.main.setZoom(4);
 		this.cameras.main.startFollow(player);
 
 		cursors = this.input.keyboard.createCursorKeys();
-
-
-		//var mapCam = this.cameras.add(600,0,200,150, false, 'map-cam');
-		//mapCam.setZoom(0.1);
-		//mapCam.setBackgroundColor('#f00');
-
-//		var map = this.make.tilemap({
-//			//key: 'map',
-//			tileWidth: 16,
-//			tileHeight: 16,
-//			width: 100,
-//			height: 100
-//		});
-//
-//		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
-//
-//		var testLayer = map.createBlankDynamicLayer('main_layer', tileset);
-//		testLayer.setScaleMode(Phaser.ScaleModes.NEAREST);
-//
-//		var indexes = {
-//			TOPL: 0,
-//			TOPC: 1,
-//			TOPR: 2,
-//			LEFT: 8,
-//			FLOOR: 9,
-//			RIGHT: 10,
-//			BOTL:  16,
-//			BOTC: 17,
-//			BOTR: 18,
-//
-//			CORNERTL: 4,
-//			CORNERTR: 5,
-//			CORNERBL: 12,
-//			CORNERBR: 13
-//		};
-//
-//		for (var i = 0; i < 8; ++i)
-//		{
-//			var rw = Phaser.Math.RND.between(3,5) * 2;
-//			var rh = Phaser.Math.RND.between(3,5) * 2;
-//			var rx = Phaser.Math.RND.between(0, 30 - rw);
-//			var ry = Phaser.Math.RND.between(0, 30 - rh);
-//
-//			// corners
-//			testLayer.putTileAt(indexes.TOPL, rx,          ry);
-//			testLayer.putTileAt(indexes.TOPR, rx + rw - 1, ry);
-//			testLayer.putTileAt(indexes.BOTL, rx,          ry + rh - 1);
-//			testLayer.putTileAt(indexes.BOTR, rx + rw - 1, ry + rh - 1);
-//
-//			// sides
-//			testLayer.fill(indexes.TOPC,  rx+1,         ry, rw-2,    1);
-//			testLayer.fill(indexes.LEFT,  rx,         ry+1,    1, rh-2);
-//			testLayer.fill(indexes.RIGHT, rx+rw-1,    ry+1,    1, rh-2);
-//			testLayer.fill(indexes.BOTC,  rx+1,    ry+rh-1, rw-2,    1);
-//
-//			// gooey center
-//			testLayer.fill(indexes.FLOOR, rx+1, ry+1, rw-2, rh-2);
-//
-//			testLayer.putTileAt(indexes.CORNERBL, rx+rw-1, ry+1);
-//			testLayer.putTileAt(indexes.FLOOR, rx+rw-1, ry+2);
-//			testLayer.putTileAt(indexes.CORNERTL, rx+rw-1, ry+3);
-//		}
-
-		//this.add.image(32, 32, 'image_tiles');
-
-		//this.add.image(132, 232, 'image_tiles');
-        //this.add.image(400, 300, 'sky');
-
-        //var particles = this.add.particles('red');
-
-        //var emitter = particles.createEmitter({
-        //    speed: 100,
-        //    scale: { start: 1, end: 0 },
-        //    blendMode: 'ADD'
-        //});
-
-        //var logo = this.physics.add.image(400, 100, 'logo');
-
-        //logo.setVelocity(100, 200);
-        //logo.setBounce(1, 1);
-        //logo.setCollideWorldBounds(true);
-
-        //emitter.startFollow(logo);
     }
 
 	function update()
@@ -222,8 +132,6 @@
 		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 32, 32);
 
 		var testLayer = map.createBlankDynamicLayer('walls', tileset);
-		//testLayer.setScaleMode(Phaser.ScaleModes.LINEAR);
-
 
 		var hasUp = function(lvl, c, r) {
 			return (r > 0) ? lvl[r-1][c] == 1 : false;
@@ -303,32 +211,6 @@
 
 		testLayer.setCollisionByExclusion([indexes.FLOOR], true, true);
 
-//		for (var i = 0; i < 8; ++i)
-//		{
-//			var rw = Phaser.Math.RND.between(3,5) * 2;
-//			var rh = Phaser.Math.RND.between(3,5) * 2;
-//			var rx = Phaser.Math.RND.between(0, 30 - rw);
-//			var ry = Phaser.Math.RND.between(0, 30 - rh);
-//
-//			// corners
-//			testLayer.putTileAt(indexes.TOPL, rx,          ry);
-//			testLayer.putTileAt(indexes.TOPR, rx + rw - 1, ry);
-//			testLayer.putTileAt(indexes.BOTL, rx,          ry + rh - 1);
-//			testLayer.putTileAt(indexes.BOTR, rx + rw - 1, ry + rh - 1);
-//
-//			// sides
-//			testLayer.fill(indexes.TOPC,  rx+1,         ry, rw-2,    1);
-//			testLayer.fill(indexes.LEFT,  rx,         ry+1,    1, rh-2);
-//			testLayer.fill(indexes.RIGHT, rx+rw-1,    ry+1,    1, rh-2);
-//			testLayer.fill(indexes.BOTC,  rx+1,    ry+rh-1, rw-2,    1);
-//
-//			// gooey center
-//			testLayer.fill(indexes.FLOOR, rx+1, ry+1, rw-2, rh-2);
-//
-//			testLayer.putTileAt(indexes.CORNERBL, rx+rw-1, ry+1);
-//			testLayer.putTileAt(indexes.FLOOR, rx+rw-1, ry+2);
-//			testLayer.putTileAt(indexes.CORNERTL, rx+rw-1, ry+3);
-//		}
 		return map;
 	}
     </script>
