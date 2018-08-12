@@ -19,7 +19,8 @@
         },
         scene: {
             preload: preload,
-            create: create
+            create: create,
+			update: update
         }
     };
 
@@ -27,13 +28,17 @@
 
     function preload ()
     {
-		this.load.image('image_tiles', 'tiles.png');
+		this.load.image('image_tiles', 'tiles_x2.png');
+		this.load.image('swarm', 'swarm.png');
         //this.load.setBaseURL('http://labs.phaser.io');
 
         //this.load.image('sky', 'assets/skies/space3.png');
         //this.load.image('logo', 'assets/sprites/phaser3-logo.png');
         //this.load.image('red', 'assets/particles/red.png');
     }
+
+	var cursors = null;
+	var player = null;
 
     function create ()
     {
@@ -61,8 +66,18 @@
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		];
 
-
 		var map = tilemapFromLevel(this, lvl);
+
+		//player = this.add.image(140, 100, 'swarm');
+		player = this.physics.add.image(140, 100, 'swarm');
+		this.physics.add.collider(player.body, map.getLayer('walls'));
+
+		//this.cameras.main.setZoom(4);
+		this.cameras.main.startFollow(player);
+
+		cursors = this.input.keyboard.createCursorKeys();
+
+
 		//var mapCam = this.cameras.add(600,0,200,150, false, 'map-cam');
 		//mapCam.setZoom(0.1);
 		//mapCam.setBackgroundColor('#f00');
@@ -146,41 +161,69 @@
         //emitter.startFollow(logo);
     }
 
+	function update()
+	{
+		var playerBody = player.body;
+
+		playerBody.setVelocity(0);
+
+		if (cursors.left.isDown)
+		{
+			playerBody.setVelocityX(-500);
+			//this.cameras.main.followOffset.x = 300;
+		}
+		else if (cursors.right.isDown)
+		{
+			playerBody.setVelocityX(500);
+			//this.cameras.main.followOffset.x = -300;
+		}
+
+		if (cursors.up.isDown)
+		{
+			playerBody.setVelocityY(-500);
+		}
+		else if (cursors.down.isDown)
+		{
+			playerBody.setVelocityY(500);
+		}
+	}
+
 	// caveat: outer 'ring' of 2d lvl array must be zeroes to render correctly
 	function tilemapFromLevel(scene, lvl)
 	{
-		var mapWidth = lvl[0].length * 2;
-		var mapHeight = lvl[0].length * 2;
-
-		var map = scene.make.tilemap({
-			//key: 'map',
-			tileWidth: 16,
-			tileHeight: 16,
-			width: mapWidth,
-			height: mapHeight
-		});
-
-		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 16, 16);
-
-		var testLayer = map.createBlankDynamicLayer('walls', tileset);
-		testLayer.setScaleMode(Phaser.ScaleModes.NEAREST);
-
 		var indexes = {
 			TOPL: 0,
 			TOPC: 1,
 			TOPR: 2,
 			LEFT: 8,
-			FLOOR: 9,
+			FLOOR: 14,
 			RIGHT: 10,
 			BOTL:  16,
 			BOTC: 17,
 			BOTR: 18,
 
-			CORNERTL: 4,
-			CORNERTR: 5,
-			CORNERBL: 12,
-			CORNERBR: 13
+			CORNERTL: 3,
+			CORNERTR: 4,
+			CORNERBL: 11,
+			CORNERBR: 12
 		};
+
+		var mapWidth = lvl[0].length * 2;
+		var mapHeight = lvl[0].length * 2;
+
+		var map = scene.make.tilemap({
+			//key: 'map',
+			tileWidth: 32,
+			tileHeight: 32,
+			width: mapWidth,
+			height: mapHeight
+		});
+
+		var tileset = map.addTilesetImage('tileset_tiles', 'image_tiles', 32, 32);
+
+		var testLayer = map.createBlankDynamicLayer('walls', tileset);
+		//testLayer.setScaleMode(Phaser.ScaleModes.LINEAR);
+
 
 		var hasUp = function(lvl, c, r) {
 			return (r > 0) ? lvl[r-1][c] == 1 : false;
@@ -257,6 +300,8 @@
 				}
 			}
 		}
+
+		testLayer.setCollisionByExclusion([indexes.FLOOR], true, true);
 
 //		for (var i = 0; i < 8; ++i)
 //		{
