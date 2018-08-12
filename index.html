@@ -34,6 +34,9 @@
 
 	var cursors = null;
 	var player = null;
+	var gfxBodyDebug = null;
+	var swarmGroup = null;
+	var swarmies = [];
 
 	function create ()
 	{
@@ -63,7 +66,40 @@
 
 		var levelObj = tilemapFromLevel(this, lvl);
 
-		player = this.physics.add.sprite(150, 100, 'swarm');
+		var startx = 150;
+		var starty = 100;
+		for (var i = 0; i < 5; ++i)
+		{
+			swarmies.push({
+				spr: this.add.sprite(startx,starty,'swarm'),
+				off: {x: 0, y:0},
+				rot: 1
+			});
+			if (i > 0)
+			{
+				var q = swarmies[i];
+				q.off.x = Phaser.Math.RND.between(0,20) - 10;
+				q.off.y = Phaser.Math.RND.between(0,20) - 10;
+				q.rot = Phaser.Math.RND.normal();
+				q.spr.setPosition(q.spr.x + q.off.x, q.spr.y + q.off.y);
+				
+				q.rot = q.rot < 0 ? (q.rot / 2 - 0.5) : (q.rot / 2 + 0.5);
+				q.rot = q.rot * 2;
+			}
+		}
+		//swarmGroup = this.add.group(swarmies);
+
+		player = swarmies[0].spr;
+
+		this.physics.add.existing(player);
+		player.body.setCircle(8,8,8);
+
+		//player = this.physics.add.sprite(150, 100, 'swarm');
+		//player.body.setCircle(8,8,8);
+		gfxBodyDebug = this.add.graphics();
+		//player.body.drawDebug(gfxBodyDebug);
+
+
 		this.physics.add.collider(player, levelObj.wallLayer);
 
 		this.cameras.main.startFollow(player);
@@ -96,6 +132,16 @@
 		{
 			playerBody.setVelocityY(350);
 		}
+
+		for ( var i = 0; i < swarmies.length; ++i )
+		{
+			var s = swarmies[i];
+			s.spr.setPosition(player.x + s.off.x, player.y + s.off.y);
+			s.spr.rotation += 0.01 * s.rot;
+		}
+
+		//gfxBodyDebug.clear();
+		//playerBody.drawDebug(gfxBodyDebug);
 	}
 
 	// caveat: outer 'ring' of 2d lvl array must be zeroes to render correctly
