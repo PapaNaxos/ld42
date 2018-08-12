@@ -7,6 +7,26 @@
 
 	<h2>Running out of space</h2>
     <script>
+	var indexes = {
+		TOPL: 0,
+		TOPC: 1,
+		TOPR: 2,
+		LEFT: 8,
+		FLOOR: 14,
+		RIGHT: 10,
+		BOTL:  16,
+		BOTC: 17,
+		BOTR: 18,
+
+		CORNERTL: 3,
+		CORNERTR: 4,
+		CORNERBL: 11,
+		CORNERBR: 12,
+
+		DESTROYED: 34
+
+	};
+
     var config = {
         type: Phaser.AUTO,
         width: 800,
@@ -32,11 +52,14 @@
 		this.load.image('swarm', 'swarm.png');
     }
 
+	var wallMap = null;
 	var cursors = null;
 	var player = null;
 	var gfxBodyDebug = null;
 	var swarmGroup = null;
 	var swarmies = [];
+	var tilesToDestroy = null;
+	var levelObj = null;
 
 	function create ()
 	{
@@ -49,10 +72,10 @@
 			[0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 			[0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 			[0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-			[0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
 			[0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0],
 			[0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0],
 			[0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0],
@@ -64,7 +87,7 @@
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		];
 
-		var levelObj = tilemapFromLevel(this, lvl);
+		levelObj = tilemapFromLevel(this, lvl);
 
 		var startx = 150;
 		var starty = 100;
@@ -105,10 +128,52 @@
 		this.cameras.main.startFollow(player);
 
 		cursors = this.input.keyboard.createCursorKeys();
+
+		wallMap = levelObj.map;
+
+		levelObj.wallLayer.setTileIndexCallback(indexes.DESTROYED, OnCollideWithDestroyed, this);
 	}
 
-	function update()
+	var destruction_ticker = 0;
+	function update(time, delta)
 	{
+		destruction_ticker += delta;
+		if (destruction_ticker > 1000.0 && tilesToDestroy.length < 30)
+		{
+			var layer = levelObj.wallLayer;
+			var nextDestruct = {};
+			var checkNeighbor = function(l, x, y, list){
+				var key = function(t){ return t.x + '-' + t.y; };
+				var t = l.getTileAt(x,y);
+				if (t.index == indexes.FLOOR && !(key(t) in list))
+					list[key(t)] = {x: t.x, y: t.y};
+				else
+					console.log('non floor index: '+ t.index);
+			};
+			for (var i = 0; i < tilesToDestroy.length; ++i)
+			{
+				var t = tilesToDestroy[i];
+				layer.putTileAt(indexes.DESTROYED, t.x, t.y);//.setCollision(true);
+
+				//var tx = t.x;
+				//var ty = t.y;
+				//layer.removeTileAt(tx, ty);
+				//t.index = indexes.DESTROYED;
+				//tilesToDestroy[i] = layer.putTileAt(indexes.DESTROYED, tx, ty);
+			}
+			for (var i = 0; i < tilesToDestroy.length; ++i)
+			{
+				var t = tilesToDestroy[i];
+				checkNeighbor(layer, t.x-1, t.y, nextDestruct);
+				checkNeighbor(layer, t.x+1, t.y, nextDestruct);
+				checkNeighbor(layer, t.x, t.y-1, nextDestruct);
+				checkNeighbor(layer, t.x, t.y+1, nextDestruct);
+			}
+			tilesToDestroy = Object.values(nextDestruct);
+			destruction_ticker = 0;
+			console.log(tilesToDestroy);
+		}
+
 		var playerBody = player.body;
 
 		playerBody.setVelocity(0);
@@ -147,22 +212,6 @@
 	// caveat: outer 'ring' of 2d lvl array must be zeroes to render correctly
 	function tilemapFromLevel(scene, lvl)
 	{
-		var indexes = {
-			TOPL: 0,
-			TOPC: 1,
-			TOPR: 2,
-			LEFT: 8,
-			FLOOR: 14,
-			RIGHT: 10,
-			BOTL:  16,
-			BOTC: 17,
-			BOTR: 18,
-
-			CORNERTL: 3,
-			CORNERTR: 4,
-			CORNERBL: 11,
-			CORNERBR: 12
-		};
 
 		var mapWidth = lvl[0].length * 2;
 		var mapHeight = lvl[0].length * 2;
@@ -225,6 +274,12 @@
 				if ( lvl[y][x] == 1 )
 				{
 					testLayer.fill(indexes.FLOOR, x*2, y*2, 2, 2);
+					if (tilesToDestroy === null)
+					{
+						var t = testLayer.getTileAt(x*2, y*2);
+						tilesToDestroy = [{x: t.x, y: t.y}];
+						//tilesToDestroy = [testLayer.getTileAt(x*2, y*2)];
+					}
 				}
 				else if ( lvl[y][x] == 0 )
 				{
@@ -261,6 +316,12 @@
 		//map.renderDebug(gfx, {}, testLayer);
 
 		return {map: map, wallLayer: testLayer};
+	}
+
+	function OnCollideWithDestroyed(sprite, tile)
+	{
+		this.cameras.main.flash(500, 255, 0, 0);
+		this.cameras.main.shake(500, 0.005);
 	}
     </script>
 
