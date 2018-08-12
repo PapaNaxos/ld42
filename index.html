@@ -35,8 +35,8 @@
 	var cursors = null;
 	var player = null;
 
-    function create ()
-    {
+	function create ()
+	{
 		var lvl = [
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 			[0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -61,15 +61,15 @@
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		];
 
-		var map = tilemapFromLevel(this, lvl);
+		var levelObj = tilemapFromLevel(this, lvl);
 
-		player = this.physics.add.image(140, 100, 'swarm');
-		this.physics.add.collider(player.body, map.getLayer('walls'));
+		player = this.physics.add.sprite(150, 100, 'swarm');
+		this.physics.add.collider(player, levelObj.wallLayer);
 
 		this.cameras.main.startFollow(player);
 
 		cursors = this.input.keyboard.createCursorKeys();
-    }
+	}
 
 	function update()
 	{
@@ -79,22 +79,22 @@
 
 		if (cursors.left.isDown)
 		{
-			playerBody.setVelocityX(-500);
+			playerBody.setVelocityX(-350);
 			//this.cameras.main.followOffset.x = 300;
 		}
 		else if (cursors.right.isDown)
 		{
-			playerBody.setVelocityX(500);
+			playerBody.setVelocityX(350);
 			//this.cameras.main.followOffset.x = -300;
 		}
 
 		if (cursors.up.isDown)
 		{
-			playerBody.setVelocityY(-500);
+			playerBody.setVelocityY(-350);
 		}
 		else if (cursors.down.isDown)
 		{
-			playerBody.setVelocityY(500);
+			playerBody.setVelocityY(350);
 		}
 	}
 
@@ -211,7 +211,10 @@
 
 		testLayer.setCollisionByExclusion([indexes.FLOOR], true, true);
 
-		return map;
+		//var gfx = scene.add.graphics();
+		//map.renderDebug(gfx, {}, testLayer);
+
+		return {map: map, wallLayer: testLayer};
 	}
     </script>
 
