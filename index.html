@@ -4,6 +4,7 @@
     <script src="phaser.min.js"></script>
 </head>
 <body>
+	<a href="diluculo.html"></a>
 
 	<h2>Running out of space</h2>
     <script>
@@ -66,7 +67,7 @@
 		var lvl = [
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 			[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0],
-			[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0],
+			[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0],
 			[0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
 			[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0],
 			[0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0],
@@ -74,7 +75,7 @@
 			[0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
 			[0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
 			[0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
-			[0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+			[0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0],
 			[0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0],
 			[0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0],
 			[0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
@@ -129,6 +130,7 @@
 		this.physics.add.collider(player, levelObj.wallLayer);
 
 		this.cameras.main.startFollow(player);
+		this.cameras.main.setZoom(0.5);
 
 		cursors = this.input.keyboard.createCursorKeys();
 
@@ -364,16 +366,21 @@
 
 				var aoa = area.w * area.h; // area of area XD
 				var ratio = area.w/area.h;
-				if (area.done || aoa <= 4 || (ratio > 0.5 && ratio < 2.0 && aoa <= 60 && Phaser.Math.RND.between(0,50) < 20))
+				//if (area.done || aoa <= 4 || (ratio > 0.6 && ratio < 1.6 && Phaser.Math.RND.between(0,aoa) < 10))
+				if (area.done || aoa <= 2 || (aoa < 100 && Phaser.Math.RND.between(0,2) == 0))
 				{
 					newList.push(area);
 					area.done = true;
 					continue;
 				}
+				var splitter = function(size){
+					return Phaser.Math.RND.between(0, ~~(size/2)) + ~~(size/4);
+				};
 				var horiz = Phaser.Math.RND.between(0,1);
 				if ( horiz && area.h >= 5 )
 				{
-					var split_at = Phaser.Math.RND.between(1, area.h-2);
+					//var split_at = Phaser.Math.RND.between(2, area.h-3);
+					var split_at = splitter(area.h);
 					newList.push({
 						done: false,
 						x: area.x,
@@ -391,7 +398,8 @@
 				}
 				else if (area.w >= 5)
 				{
-					var split_at = Phaser.Math.RND.between(1, area.w-2);
+					//var split_at = Phaser.Math.RND.between(2, area.w-3);
+					var split_at = splitter(area.w);
 					newList.push({
 						done: false,
 						x: area.x,
@@ -507,11 +515,13 @@
 					lvl[y][x] = 1;
 				}
 			}
+			area.ex = endx - 1;
+			area.ey = endy - 1;
 			// add two doors per room
-			var door = findHorizontalZero(lvl, area);
-			lvl[door.y][door.x] = 1;
-			var door = findVerticalZero(lvl, area);
-			lvl[door.y][door.x] = 1;
+			//var door = findHorizontalZero(lvl, area);
+			//lvl[door.y][door.x] = 1;
+			//var door = findVerticalZero(lvl, area);
+			//lvl[door.y][door.x] = 1;
 		}
 
 		return lvl;
