@@ -21,6 +21,8 @@ var worldText;
 
 function preload ()
 {
+	this.load.image('castle', 'castle.png');
+	this.load.image('village', 'village.png');
 }
 
 function create ()
@@ -28,15 +30,144 @@ function create ()
 	var lw = 2500;
 	var lh = 2000;
 	var scene = this;
+	var land;
 	this.textures.once('addtexture', function(){ 
 		scene.add.image(lw/2+20,lh/2+20, 'land'); 
 		worldText = scene.add.text(10, 10, "The World of Diluculo");
+		populateVillages(scene, land);
 	});
 
 	var land = createLandImage(lw, lh);
-	this.textures.addBase64('land', 'data:image/png;base64,' + land.getBase64());
-
+	this.textures.addBase64('land', 'data:image/png;base64,' + land[0].getBase64());
 	cursors = this.input.keyboard.createCursorKeys();
+}
+
+function populateVillages(scene, land)
+{
+	var lw = land[1][0].length;
+	var lh = land[1].length;
+
+	var names = [
+		'Tomment',
+		'Nadra', 
+		'Tremont',
+		'Andas',
+		'Argentum',
+		'Abia',
+		'Akor',
+		'Bendel',
+		'Carrow',
+		'Chick', 
+		'Delvor',
+		'Easte',
+		'Farrel',
+		'Gandel',
+		'Himork',
+		'Jallen',
+		'Korsem',
+		'Lepnosk',
+		'Lorre',
+		'Minan',
+		'Nuben',
+		'Ollis',
+		'Pengol',
+		'Quisen',
+		'Raele',
+		'Ripont',
+		'Sepre',
+		'Talbor',
+		'Tanneba',
+		'Ummen',
+		'Vorta',
+		'Wexa',
+		'Xera',
+		'Yismmil',
+		'Zeptal'
+	];
+
+	var canPlace = function(x, y, places)
+	{
+		for (var i = 0; i < places.length; ++i)
+		{
+			var dx = px - places[i].x;
+			var dy = py - places[i].y;
+			if ( dx*dx + dy*dy < 10000 )
+				return false;
+		}
+		return true;
+	};
+
+	var places = [];
+	while(places.length < 40)
+	{
+		var px = Phaser.Math.RND.between(0, lw-1);
+		var py = Phaser.Math.RND.between(0, lh-1);
+		//var px = Phaser.Math.RND.between(lw*0.2, lw*0.8);
+		//var py = Phaser.Math.RND.between(lh*0.2, lh*0.8);
+		if ( land[1][py][px] < 65 || land[1][py][px] > 200 )
+			continue;
+
+		if ( !canPlace(px, py, places) )
+			continue;
+
+		var name = names[ Phaser.Math.RND.between(0, names.length-1) ];
+
+		var z = Phaser.Math.RND.between(0,2);
+		
+		if ( z == 0 )
+			name = name + 'ville';
+		else if ( z == 1 ) 
+			name = name + ' Village';
+		else
+			name = name + ' Burrough';
+
+		places.push({
+			x: px,
+			y: py,
+			name: name,
+			icon: 'village'
+		});
+	}
+
+	while(places.length < 50)
+	{
+		var px = Phaser.Math.RND.between(0, lw-1);
+		var py = Phaser.Math.RND.between(0, lh-1);
+		//var px = Phaser.Math.RND.between(lw*0.2, lw*0.8);
+		//var py = Phaser.Math.RND.between(lh*0.2, lh*0.8);
+		if ( land[1][py][px] < 65 || land[1][py][px] > 200 )
+			continue;
+
+		if ( !canPlace(px, py, places) )
+			continue;
+
+		var name = names[ Phaser.Math.RND.between(0, names.length-1) ];
+
+		var z = Phaser.Math.RND.between(0,2);
+		
+		if ( z == 0 )
+			name = 'Castle ' + name;
+		else if ( z == 1 ) 
+			name = name + ' Citadel';
+		else
+			name = name + ' Fortress';
+
+		places.push({
+			x: px,
+			y: py,
+			name: name,
+			icon: 'castle'
+		});
+	}
+
+	console.log('places: ');
+	console.log(places);
+	for (var i = 0; i < places.length; ++i)
+	{
+		var p = places[i];
+		scene.add.image( p.x, p.y, p.icon );
+		scene.add.text( p.x-50, p.y-30, p.name, {backgroundColor: "black"});
+	}
 }
 
 function update(time, delta)
@@ -63,6 +194,10 @@ function update(time, delta)
 
 function createLandImage(w,h)
 {
+	var worldMap = Array(h);
+	for (var i = 0; i < h; ++i)
+		worldMap[i] = Array(w);
+
 	//var s = new SimplexNoise('papa');
 	var s = new SimplexNoise();
 
@@ -171,10 +306,11 @@ function createLandImage(w,h)
 			//}
 			//val = val > 255 ? 255 : (val < 0 ? 0: val);
 			
+			worldMap[y][x] = val;
 			var pixel = getColor(val, lastVal);
 			img.buffer[img.index(x,y)] = img.color(pixel.r, pixel.g, pixel.b, 255);
 			lastVal = val;
 		}
 	}
-	return img;
+	return [img, worldMap];
 }
