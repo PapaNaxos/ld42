@@ -363,7 +363,8 @@
 				var area = list[i];
 
 				var aoa = area.w * area.h; // area of area XD
-				if (area.done || aoa <= 20 || (aoa <= 60 && Phaser.Math.RND.between(0,50) < 10))
+				var ratio = area.w/area.h;
+				if (area.done || aoa <= 4 || (ratio > 0.5 && ratio < 2.0 && aoa <= 60 && Phaser.Math.RND.between(0,50) < 20))
 				{
 					newList.push(area);
 					area.done = true;
@@ -429,22 +430,30 @@
 			if ( area.y + area.h == lvl[0].length - 1 ) useTop = true;
 
 			var row;
+			var nextRoom; // checking for a floor tile in the next room
 			if (useTop)
 			{
 				row = area.y-1;
+				nextRoom = row-1;
 			}
 			else
 			{
 				row = area.y + area.h;
+				nextRoom = row+1;
 			}
 
 			var failCount = 0;
 			var col = Phaser.Math.RND.between(area.x, area.w-1);
 			while (failCount < 10 && lvl[row][col] != 0)
 			{
+				//if (lvl[row][col] == 0 && lvl[nextRoom][col] == 1)
+				//	break;
+
 				col = Phaser.Math.RND.between(area.x, area.w-1);
 				++failCount;
 			}
+			if (failCount >= 10)
+				return {x: area.x, y: area.y}; // essentially, do nothing
 
 			return {x: col, y: row};
 		};
@@ -458,23 +467,30 @@
 			if ( area.x + area.w == lvl.length - 1 ) useLeft = true;
 
 			var col;
+			var nextRoom;
 			if (useLeft)
 			{
 				col = area.x-1;
+				nextRoom = col-1;
 			}
 			else
 			{
-				row = area.x + area.w;
+				col = area.x + area.w;
+				nextRoom = col+1;
 			}
-
 
 			var failCount = 0;
 			var row = Phaser.Math.RND.between(area.y, area.h-1);
 			while (failCount < 10 && lvl[row][col] != 0)
 			{
+				//if (lvl[row][col] == 0 && lvl[row][nextRoom] == 1)
+				//	break;
+
 				row = Phaser.Math.RND.between(area.y, area.h-1);
 				++failCount;
 			}
+			if (failCount >= 10)
+				return {x: area.x, y: area.y}; // essentially, do nothing
 
 			return {x: col, y: row};
 		};
