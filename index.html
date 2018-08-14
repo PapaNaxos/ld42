@@ -58,7 +58,7 @@
 	var gfxBodyDebug = null;
 	var swarmGroup = null;
 	var swarmies = [];
-	var tilesToDestroy = null;
+	var tilesToDestroy = [];
 	var levelObj = null;
 
 	function create ()
@@ -86,6 +86,9 @@
 			[0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		];
+
+		lvl = genLevel();
+		console.log(lvl);
 
 		levelObj = tilemapFromLevel(this, lvl);
 
@@ -137,14 +140,16 @@
 	var destruction_ticker = 0;
 	function update(time, delta)
 	{
-		destruction_ticker += delta;
+		// disabling destruction ATM
+		// destruction_ticker += delta;
 		if (tilesToDestroy.length <= 0)
 		{
 			levelObj.wallLayer.swapByIndex(indexes.DESTROYED, indexes.FLOOR);
 			var t = levelObj.wallLayer.findTile(function(param){
 				return param.index == indexes.FLOOR;
 			});
-			tilesToDestroy = [{x: t.x, y: t.y}];
+			if (t)
+				tilesToDestroy = [{x: t.x, y: t.y}];
 		}
 		else if (destruction_ticker > 300.0 && tilesToDestroy.length < 100)
 		{
@@ -153,6 +158,9 @@
 			var checkNeighbor = function(l, x, y, list){
 				var key = function(t){ return t.x + '-' + t.y; };
 				var t = l.getTileAt(x,y);
+
+				if (t === null) return;
+
 				if (t.index == indexes.FLOOR && !(key(t) in list))
 					list[key(t)] = {x: t.x, y: t.y};
 				else
@@ -282,7 +290,7 @@
 				if ( lvl[y][x] == 1 )
 				{
 					testLayer.fill(indexes.FLOOR, x*2, y*2, 2, 2);
-					if (tilesToDestroy === null)
+					if (tilesToDestroy.length <= 0)
 					{
 						var t = testLayer.getTileAt(x*2, y*2);
 						tilesToDestroy = [{x: t.x, y: t.y}];
@@ -318,7 +326,8 @@
 			}
 		}
 
-		testLayer.setCollisionByExclusion([indexes.FLOOR], true, true);
+		// FIXME: disabling collisions with walls
+		// testLayer.setCollisionByExclusion([indexes.FLOOR], true, true);
 
 		//var gfx = scene.add.graphics();
 		//map.renderDebug(gfx, {}, testLayer);
@@ -335,57 +344,161 @@
 	function genLevel()
 	{
 		var root = {
-			x: 0,
-			y: 0,
-			w: 200,
-			h: 100
+			done: false,
+			x: 1,
+			y: 1,
+			w: 30,//200,
+			h: 30//100
 		};
 
-		var lvl = Array(root.h);
+		var lvl = Array(root.h+2);
 		for ( var i = 0; i < lvl.length; ++i )
-			lvl[i] = Array(root.w).fill(1);
+			lvl[i] = Array(root.w+2).fill(0);
 
-		var splitNodes = function(list)
+		var splitAreas = function(list)
 		{
 			var newList = [];
 			for ( var i = 0; i < list.length; ++i)
 			{
-				var horiz = Phaser.Math.between(0,1);
-				if ( horiz )
+				var area = list[i];
+
+				var aoa = area.w * area.h; // area of area XD
+				if (area.done || aoa <= 20 || (aoa <= 60 && Phaser.Math.RND.between(0,50) < 10))
 				{
+					newList.push(area);
+					area.done = true;
+					continue;
+				}
+				var horiz = Phaser.Math.RND.between(0,1);
+				if ( horiz && area.h >= 5 )
+				{
+					var split_at = Phaser.Math.RND.between(1, area.h-2);
 					newList.push({
-						x: list[i].x,
-						y: list[i].y,
-						w: list[i].w,
-						h: list[i].h / 2
+						done: false,
+						x: area.x,
+						y: area.y,
+						w: area.w,
+						h: split_at
 					});
 					newList.push({
-						x: list[i].x,
-						y: list[i].y + list[i].h / 2,
-						w: list[i].w,
-						h: list[i].h / 2
+						done: false,
+						x: area.x,
+						y: area.y + split_at + 1,
+						w: area.w,
+						h: area.h - split_at - 1
+					});
+				}
+				else if (area.w >= 5)
+				{
+					var split_at = Phaser.Math.RND.between(1, area.w-2);
+					newList.push({
+						done: false,
+						x: area.x,
+						y: area.y,
+						w: split_at,
+						h: area.h
+					});
+					newList.push({
+						done: false,
+						x: area.x + split_at + 1,
+						y: area.y,
+						w: area.w - split_at - 1,
+						h: area.h
 					});
 				}
 				else
-				{
-					newList.push({
-						x: list[i].x,
-						y: list[i].y,
-						w: list[i].w / 2,
-						h: list[i].h
-					});
-					newList.push({
-						x: list[i].x + list[i].w / 2,
-						y: list[i].y,
-						w: list[i].w / 2,
-						h: list[i].h
-					});
-				}
+					newList.push(area);
+
 			}
+			return newList;
 		};
 
-		var nodeList = [root];
+		var areaList = [root];
 
+		for ( var i = 0; i < 15; ++i )
+			areaList = splitAreas(areaList);
+
+		console.log(areaList);
+
+		var findHorizontalZero = function(lvl, area)
+		{
+			var useTop = Phaser.Math.RND.between(0,1);
+			
+			// check for edge areas
+			if ( area.y == 1 ) useTop = false;
+			if ( area.y + area.h == lvl[0].length - 1 ) useTop = true;
+
+			var row;
+			if (useTop)
+			{
+				row = area.y-1;
+			}
+			else
+			{
+				row = area.y + area.h;
+			}
+
+			var failCount = 0;
+			var col = Phaser.Math.RND.between(area.x, area.w-1);
+			while (failCount < 10 && lvl[row][col] != 0)
+			{
+				col = Phaser.Math.RND.between(area.x, area.w-1);
+				++failCount;
+			}
+
+			return {x: col, y: row};
+		};
+
+		var findVerticalZero = function(lvl, area)
+		{
+			var useTop = Phaser.Math.RND.between(0,1);
+			
+			// check for edge areas
+			if ( area.x == 1 ) useLeft = false;
+			if ( area.x + area.w == lvl.length - 1 ) useLeft = true;
+
+			var col;
+			if (useLeft)
+			{
+				col = area.x-1;
+			}
+			else
+			{
+				row = area.x + area.w;
+			}
+
+
+			var failCount = 0;
+			var row = Phaser.Math.RND.between(area.y, area.h-1);
+			while (failCount < 10 && lvl[row][col] != 0)
+			{
+				row = Phaser.Math.RND.between(area.y, area.h-1);
+				++failCount;
+			}
+
+			return {x: col, y: row};
+		};
+
+		for ( var i = 0; i < areaList.length; ++i )
+		{
+			var area = areaList[i];
+			var endx = area.x + area.w;
+			var endy = area.y + area.h;
+			for ( var y = area.y; y < endy; ++y )
+			{
+				for ( var x = area.x; x < endx; ++x )
+				{
+					lvl[y][x] = 1;
+				}
+			}
+			// add two doors per room
+			var door = findHorizontalZero(lvl, area);
+			lvl[door.y][door.x] = 1;
+			var door = findVerticalZero(lvl, area);
+			lvl[door.y][door.x] = 1;
+		}
+
+		return lvl;
 	}
 
     </script>
