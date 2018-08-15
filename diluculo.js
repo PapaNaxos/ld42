@@ -1,3 +1,8 @@
+function downloadMap()
+{
+	download(worldImage, "diluculo_"+g_seed+".png", "image/png");
+}
+
 var config = {
 	type: Phaser.AUTO,
 	width: window.innerWidth,
@@ -18,11 +23,15 @@ var config = {
 var game = new Phaser.Game(config);
 
 var worldText;
+var worldImage;
+var g_seed = Phaser.Math.RND.between(0,2100000000);
 
 function preload ()
 {
+	document.getElementById('seed').innerHTML = g_seed + "";
 	this.load.image('castle', 'castle.png');
 	this.load.image('village', 'village.png');
+	Phaser.Math.RND.sow([g_seed]);
 }
 
 function create ()
@@ -33,13 +42,16 @@ function create ()
 	var land;
 	this.textures.once('addtexture', function(){ 
 		scene.add.image(lw/2+20,lh/2+20, 'land'); 
-		worldText = scene.add.text(10, 10, "The World of Diluculo");
+		worldText = scene.add.text(10, 10, "The World of Diluculo: (seed: "+g_seed+")");
 		populateVillages(scene, land);
 	});
 
 	var land = createLandImage(lw, lh);
-	this.textures.addBase64('land', 'data:image/png;base64,' + land[0].getBase64());
+	worldImage = 'data:image/png;base64,'+land[0].getBase64();
+
+	this.textures.addBase64('land', worldImage);
 	cursors = this.input.keyboard.createCursorKeys();
+
 }
 
 function populateVillages(scene, land)
