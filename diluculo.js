@@ -94,7 +94,97 @@ function populateVillages(scene, land)
 		'Wexa',
 		'Xera',
 		'Yismmil',
-		'Zeptal'
+		'Zeptal',
+		'Mallowham',
+		'Beldale',
+		'Meadowdell',
+		'Dracfort',
+		'Merribourne',
+		'Merribourne',
+		'Draclake',
+		'Coldwater',
+		'Ironview',
+		'Wayville',
+		'Wellfield',
+		'Greysnow',
+		'Barrowedge',
+		'Wildebourne',
+		'Glassfield',
+		'Raygate',
+		'Springacre',
+		'Newbrook',
+		'Wellfox',
+		'Stonewater',
+		'Belmere',
+		'Dorcastle',
+		'Violetwall',
+		'Roseviolet',
+		'Merriedge',
+		'Merriwick',
+		'Wolfbush',
+		'Norville',
+		'Linford',
+		'Foxcoast',
+		'Wintermarble',
+		'Merrimarsh',
+		'Valmoor',
+		'Highkeep',
+		'Spellley',
+		'Redelf',
+		'Fallfox',
+		'Ironness',
+		'Brookcoast',
+		'Violethaven',
+		'Strongshade',
+		'Lincliff',
+		'Edgehedge',
+		'Witchwyn',
+		'Westerrose',
+		'Bycastle',
+		'Violetcastle',
+		'Bridgehaven',
+		'Aldford',
+		'Aldston',
+		'Greyrock',
+		'Newbridge',
+		'Northcoast',
+		'Wyvernpond',
+		'Silvermarsh',
+		'Redhall',
+		'Witchbush',
+		'Marshholt',
+		'Lochdale',
+		'Coldmallow',
+		'Crystalpond',
+		'Estermere',
+		'Lakeshore',
+		'Clearapple',
+		'Starrygate',
+		'Eritown',
+		'Fallvale',
+		'Prybarrow',
+		'Strongwinter',
+		'Aelpond',
+		'Eribush',
+		'Deepshore',
+		'Brookmount',
+		'Deepwolf',
+		'Highwyn',
+		'Wildegate',
+		'Deepsummer',
+		'Riverhollow',
+		'Mallowburn',
+		'Lorholt',
+		'Lochburn',
+		'Wildeway',
+		'Falconbourne',
+		'Greyloch',
+		'Springapple',
+		'Oldhedge',
+		'Fogdell',
+		'Mistdell',
+		'Snowfair',
+		'Mallowmarble'
 	];
 
 	var canPlace = function(x, y, places)
@@ -124,14 +214,16 @@ function populateVillages(scene, land)
 
 		var name = names[ Phaser.Math.RND.between(0, names.length-1) ];
 
-		var z = Phaser.Math.RND.between(0,2);
+		var z = Phaser.Math.RND.between(0,3);
 		
 		if ( z == 0 )
-			name = name + 'ville';
+			name = name + ' Dale';
 		else if ( z == 1 ) 
 			name = name + ' Village';
-		else
+		else if ( z == 2 )
 			name = name + ' Burrough';
+		else
+			name = name + ' City';
 
 		places.push({
 			x: px,
