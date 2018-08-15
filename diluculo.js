@@ -344,7 +344,7 @@ function createLandImage(w,h)
 		//cheeeeap shadowing, probalby blech
 		if ( last > val )
 		{
-			var drop = 0.95;
+			var drop = 0.92;
 			r *= drop; 
 			g *= drop; 
 			b *= drop;
@@ -416,5 +416,67 @@ function createLandImage(w,h)
 			lastVal = val;
 		}
 	}
+
+	return [img, worldMap]; // turn off rivers for now // FIXME
+
+	// RIVERS!
+	for (var i = 0; i < 4; ++i)
+	{
+		// find initial river point
+		var rivx = Phaser.Math.RND.between(0,w-1);
+		var rivy = Phaser.Math.RND.between(0,h-1);
+		while (worldMap[rivy][rivx] < 150 && worldMap[rivy][rivx] > 200)
+		{
+			rivx = Phaser.Math.RND.between(0,w-1);
+			rivy = Phaser.Math.RND.between(0,h-1);
+		}
+
+		var addToList = function(x, y, map, list)
+		{
+			if (x < 0 || x >= map[0].length || y < 0 || y >= map.length)
+				return;
+			list.push({x: x, y: y, v: map[y][x]});
+		};
+		var findMin = function(list)
+		{
+			var min = list[0];
+			for (var i = 1; i < list.length; ++i)
+			{
+				if ( min.v > list[i].v )
+					min = list[i];
+			}
+			return min;
+		};
+
+		var limiter = 0;
+		// roll down the hills!
+		var lastPos = {x: rivx, y: rivy};
+		while (worldMap[rivy][rivx] > 60 && limiter < 3000)
+		{
+			var list = [];
+			addToList(rivx-1, rivy-1, worldMap, list);
+			addToList(rivx-0, rivy-1, worldMap, list);
+			addToList(rivx+1, rivy-1, worldMap, list);
+			addToList(rivx-1, rivy-0, worldMap, list);
+			addToList(rivx+1, rivy-0, worldMap, list);
+			addToList(rivx-1, rivy+1, worldMap, list);
+			addToList(rivx-0, rivy+1, worldMap, list);
+			addToList(rivx+1, rivy+1, worldMap, list);
+
+			var minPos = findMin(list);
+			while (minPos.x == lastPos.x && minPos.y == lastPos.y)
+			{
+				minPos = list[ Phaser.Math.RND.between(0, list.length-1) ];
+			}
+			rivx = minPos.x;
+			rivy = minPos.y;
+			img.buffer[img.index(rivx,rivy)] = img.color(0, 0, 255, 255);
+
+			++limiter;
+			lastPos = minPos;
+		}
+	}
+
+
 	return [img, worldMap];
 }
