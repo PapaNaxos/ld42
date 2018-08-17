@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="phaser.min.js"></script>
+<style>
+body {
+	margin: 0px;
+}
+
+#exp-list {
+	padding: 5px;
+}
+
+div.experiment {
+	border: 1px solid #bbb;
+	padding: 2px;
+}
+div.experiment label {
+	display: block;
+	margin: 3px;
+}
+div.output {
+
+}
+div.experiment input {
+	min-width: 500px;
+	padding: 3px;
+	border-radius: 3px;
+}
+</style>
+</head>
+<body>
+	<button type="button" onclick="addNewExperiment();">Add Experiment</button>
+	<div id="exp-list"></div>
+	<script src="download.js"></script>
+	<script src="pnglib.js"></script>
+	<script src="simplex-noise.js"></script>
+
+<script>
+////////////////////////////////////////////////////////////////////////////////
+function norm(start, end, x)
+{
+	return clamp( (x - start) / (end - start), 0, 1 );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function clamp(x, lower, upper)
+{
+	return x < lower ? lower : ( x > upper ? upper : x );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function ss5(start, end, x)
+{
+	x = x * x * x * (x * (x * 6 - 15) + 10);
+	return start * (1-x) + end * x;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function ss5n(start, end, x)
+{
+	// smootherstep
+	// quintic 
+	// 6x^5 - 15x^4 + 10x^3
+	//x = clamp( (x - start) / (end - start), 0, 1 );
+	x = norm( start, end, x );
+	return x * x * x * (x * (x * 6 - 15) + 10);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function lint(a,b,t)
+{
+	return a*(1-t) + b*t;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function makeParam(type, name, value)
+{
+	var p = $('<input type="text" class="param">').val(value).data('name', name).data('ptype', type);
+	return $('<label>').append( p ).append( name );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function addNewExperiment()
+{
+	$('#exp-list').append(
+		$('<div class="experiment">')
+			.append( makeParam('function', 'func', 'return x;') )
+			.append( makeParam('float', 'scale', '100') )
+			.append( $('<div class="output">') )
+	);
+	$('.experiment').last().find('input').first().trigger('change');
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function getParams(exp)
+{
+	var obj = {};
+
+	$(exp).find('.param').each(function(){
+
+		var pVal = $(this).val();
+		switch( $(this).data('ptype') )
+		{
+			case "function":
+				pVal = (new Function("return function(x){" + $(this).val() + "};"))();
+				break;
+			case "float":
+				pVal = parseFloat(pVal);
+				break;
+		}
+
+		obj[ $(this).data('name') ] = pVal;
+	});
+
+	return obj;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+$(document).ready(function(){
+	$('#exp-list').on('change', 'input', function(){
+		var exp = $(this).closest('.experiment');
+		var params = getParams( exp );
+
+		var output = exp.find('.output').empty();
+
+		if (typeof params.func != "function")
+			output.append("error in function");
+		else
+			output.append('<img src="data:image/png;base64,' + genNoise(params) + '">');
+	});
+	addNewExperiment();
+});
+
+////////////////////////////////////////////////////////////////////////////////
+function genNoise(params)
+{
+	var size = 512;
+	var s = new SimplexNoise();
+	var img = new PNGlib(size, size, 256);
+	for (var x = 0; x < size; ++x)
+	{
+		for (var y = 0; y < size; ++y)
+		{
+			var v = params.func( s.noise2D(x / params.scale, y / params.scale) );
+			v = (v * 0.5 + 0.5) * 255;
+			img.buffer[img.index(x,y)] = img.color(v, v, v, 255);
+		}
+	}
+	return img.getBase64();
+}
+
+</script>
+</body>
+</html>
