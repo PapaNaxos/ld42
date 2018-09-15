@@ -117,6 +117,7 @@ function getParams(exp)
 	return obj;
 }
 
+var gPerlinScale = 4;
 ////////////////////////////////////////////////////////////////////////////////
 $(document).ready(function(){
 	$('#exp-list').on('change', 'input', function(){
@@ -131,6 +132,35 @@ $(document).ready(function(){
 			output.append('<img src="data:image/png;base64,' + genNoise(params) + '">');
 	});
 	addNewExperiment();
+
+	$('body').append('<img class="perlin" src="data:image/png;base64,' + myNoise(1,1) + '">');
+	$('body').on('mousemove', '.perlin', function(e){
+		var o = $(this).offset();
+		var x = (e.pageX - o.left) / $(this).width();
+		var y = (e.pageY - o.top) / $(this).height();
+		x = x * 2 - 1;
+		y = y * 2 - 1;
+
+		x *= gPerlinScale;
+		y *= gPerlinScale;
+		this.src = 'data:image/png;base64,' + myNoise(x,y);
+		console.log(x, y);
+	});
+
+	$('body').on('mousewheel DOMMouseScroll', '.perlin', function(event){
+		if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
+			gPerlinScale += 1;
+			// scroll up
+		}
+		else {
+			gPerlinScale -= 1;
+			if (gPerlinScale < 1)
+				gPerlinScale = 1;
+			// scroll down
+		}
+		return true;
+		event.stopPropagation();
+	});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +173,115 @@ function genNoise(params)
 	{
 		for (var y = 0; y < size; ++y)
 		{
-			var v = params.func( s.noise2D(x / params.scale, y / params.scale) );
+			//var v = params.func( s.noise2D(x / params.scale, y / params.scale) );
+			var v = params.func( myNoise(x / params.scale, y / params.scale) );
+			v = clamp(v, -1.0, 1.0);
+			v = (v * 0.5 + 0.5) * 255;
+			img.buffer[img.index(x,y)] = img.color(v, v, v, 255);
+		}
+	}
+	return img.getBase64();
+}
+
+var GRADIENTS = [
+	{ x:  0,   y:  1   },
+	{ x:  0.5, y:  1   },
+	{ x:  1,   y:  1   },
+	{ x:  1,   y:  0.5 },
+	{ x:  1,   y:  0   },
+	{ x:  1,   y: -0.5 },
+	{ x:  1,   y: -1   },
+	{ x:  0.5, y: -1   },
+	{ x:  0,   y: -1   },
+	{ x: -0.5, y: -1   },
+	{ x: -1,   y: -1   },
+	{ x: -1,   y: -0.5 },
+	{ x: -1,   y:  0   },
+	{ x: -1,   y:  0.5 },
+	{ x: -1,   y:  1   },
+	{ x: -0.5, y:  1   }
+];
+
+var gPermTable = [];
+//for (var i = 0; i < 256; ++i)
+//	gPermTable[i] = i;
+//for (var i = 0; i < 256; ++i)
+//{
+//	var k = Math.floor(Math.random()*255);
+//	var t = gPermTable[k];
+//	gPermTable[k] = gPermTable[i];
+//	gPermTable[i] = t;
+//}
+gPermTable = [
+ 3, 177, 26, 86, 46, 43, 155, 75, 221, 138, 192, 204, 131, 89, 8, 71, 148, 120, 9, 140,
+ 183, 28, 68, 66, 33, 185, 197, 34, 2, 151, 145, 132, 174, 153, 63, 25, 189, 73, 64, 166,
+ 50, 152, 159, 13, 111, 184, 16, 88, 213, 77, 214, 18, 41, 225, 37, 161, 172, 235, 101, 115,
+ 110, 97, 173, 47, 194, 121, 238, 20, 58, 118, 117, 136, 95, 146, 216, 90, 181, 119, 14, 125,
+ 147, 85, 168, 113, 182, 247, 127, 100, 51, 254, 112, 129, 6, 22, 94, 191, 79, 123, 93, 176,
+ 23, 53, 188, 107, 126, 27, 200, 203, 15, 196, 157, 245, 74, 206, 251, 142, 109, 19, 102, 0,
+ 42, 70, 249, 55, 190, 207, 154, 244, 30, 156, 124, 99, 4, 143, 29, 224, 255, 35, 80, 241,
+ 201, 134, 40, 198, 31, 212, 87, 7, 169, 106, 108, 211, 179, 210, 252, 187, 253, 246, 96, 56,
+ 234, 165, 226, 220, 209, 36, 62, 208, 158, 81, 199, 175, 232, 240, 171, 186, 139, 231, 149, 65,
+ 78, 164, 160, 128, 195, 227, 233, 130, 24, 228, 178, 250, 82, 10, 60, 167, 215, 44, 72, 103,
+ 242, 17, 67, 54, 59, 141, 92, 105, 116, 98, 52, 237, 49, 1, 223, 218, 76, 57, 180, 144,
+ 193, 5, 133, 114, 150, 222, 229, 91, 38, 205, 69, 163, 83, 170, 236, 84, 21, 230, 61, 162,
+ 11, 239, 217, 248, 219, 45, 39, 243, 122, 32, 48, 202, 104, 135, 137, 12
+];
+
+////////////////////////////////////////////////////////////////////////////////
+function myNoise(x, y)
+{
+	var smooth = function(x){ return x * x * x * (x * (x * 6 - 15) + 10); };
+
+	var dotGradient = function(x, y, vx, vy){
+		var grad = GRADIENTS[gPermTable[(gPermTable[x] + y) % gPermTable.length] % GRADIENTS.length];
+		return vx*grad.x + vy*grad.y;
+	};
+
+	var ix = Math.floor(x);
+	var iy = Math.floor(y);
+	var nx = ix + 1;
+	var ny = iy + 1;
+
+	var a = dotGradient(ix, iy, x - ix, y - iy);
+	var b = dotGradient(nx, iy, x - nx, y - iy);
+	var c = dotGradient(ix, ny, x - ix, y - ny);
+	var d = dotGradient(nx, ny, x - nx, y - ny);
+
+	var dx = smooth(x - ix);
+	var dy = smooth(y - iy);
+
+	var w = a * (1 - dx) + b * dx;
+	var z = c * (1 - dx) + d * dx;
+
+	return w * (1 - dy) + z * dy;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function myGradientThing(gx, gy)
+{
+	var smooth = function(x){ return x * x * x * (x * (x * 6 - 15) + 10); };
+
+	var size = 512;
+	var hsize = size/2;
+	var img = new PNGlib(size, size, 256);
+	for (var x = 0; x < size; ++x)
+	{
+		for (var y = 0; y < size; ++y)
+		{
+			var px = x/hsize - 1;
+			var py = y/hsize - 1;
+
+			var dot = px*gx + py*gy;
+
+			var xinterp = smooth(Math.abs(px));
+			var yinterp = smooth(Math.abs(py));
+
+			dot = dot * (1 - xinterp) - xinterp;
+			dot = dot * (1 - yinterp) - yinterp;
+			var v = clamp(dot, -1, 1);
+
+			//var v = params.func( s.noise2D(x / params.scale, y / params.scale) );
 			v = (v * 0.5 + 0.5) * 255;
 			img.buffer[img.index(x,y)] = img.color(v, v, v, 255);
 		}

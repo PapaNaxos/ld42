@@ -1,0 +1,191 @@
+<html>
+<head>
+<style>
+.part.char {
+	position: absolute;
+	border: none;
+	overflow: visible;
+}
+.part {
+	border: 2px solid black;
+	border-radius: 5px;
+}
+.part.head {
+	position: absolute;
+	overflow: visible;
+	width: 50px;
+	height: 50px;
+	background-color: #F7E;
+	background-color: #0dd; 
+}
+.part.mouth {
+	top: 52px;
+	left: -2px;
+	position: absolute;
+	width: 50px;
+	height: 10px;
+	background-color: #F7E; /*0dd*/
+	background-color: #0dd; 
+	transform-origin: right center;
+}
+.part.l_eye{
+	/*display: inline-block;*/
+	float: left;
+	margin-top: 15px;
+	margin-right: 5px;
+	width: 15px;
+	height: 15px;
+
+	/*
+	position: absolute;
+	top: 15px;
+	left: 0px;
+	width: 15px;
+	height: 15px;
+	*/
+	background-color: white;
+}
+.part.r_eye{
+	/*display: inline-block;*/
+	float: left;
+	margin-top: 15px;
+	width: 15px;
+	height: 15px;
+
+	/*
+	position: absolute;
+	top: 15px;
+	left: 20px;
+	width: 15px;
+	height: 15px;
+	*/
+	background-color: white;
+}
+.part.pupil {
+	height: 2px;
+	width: 2px;
+	background-color: black;
+	margin-left: 4px;
+	margin-top: 5px;
+
+}
+.part.nose {
+	/*
+	position: absolute;
+	top: 40px;
+	left: 15px;
+	*/
+	
+	margin-top: 36px;
+	margin-left: 16px;
+	width: 0; 
+	height: 0; 
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+
+	border-top: 5px solid red;
+	border-bottom: none;
+}
+
+
+/* Animations */
+@keyframes eyeblink {
+	/*
+	25% {
+		top: 22px;
+		height: 0px;
+	}
+	75% {
+		top: 22px;
+		height: 0px;
+	}
+	*/
+
+	25% {
+		margin-top: 22px;
+		height: 0px;
+	}
+	75% {
+		margin-top: 22px;
+		height: 0px;
+	}
+	100% {
+		height: 15px;
+	}
+}
+
+.part.l_eye.blink,
+.part.r_eye.blink {
+	animation-duration: 0.5s;
+	animation-name: eyeblink;
+}
+.part.pupil.blink {
+	display: none;
+}
+
+@keyframes lookright {
+	10% {
+		margin-left: 7px;
+	}
+	90% {
+		margin-left: 7px;
+	}
+	100% { 
+		margin-left: 0px;
+	}
+}
+
+/*.part.l_eye.lookright,*/
+.part.l_eye.lookright {
+	animation-duration: 3s;
+	animation-name: lookright;
+}
+
+.part.pupil.lookright {
+	margin-left: 7px;
+}
+
+.part.mouth.lookright {
+	transform-origin: left center;
+}
+.part.nose.lookright {
+	margin-left: 23px;
+}
+
+@keyframes tilt {
+	25% {
+		transform: rotate(7deg);
+	}
+	50% {
+		transform: rotate(-7deg);
+	}
+	75% {
+		transform: rotate(7deg);
+	}
+	100% {
+		transform: rotate(0deg);
+	}
+}
+
+.part.head.tilt {
+	animation-duration: 3s;
+	animation-name: tilt;
+}
+
+body {
+	background-color: #FFFF00;
+	background-color: #FF00FF;
+}
+</style>
+</head>
+
+<body>
+<div id="char_holder">
+</div>
+<script src="https://code.jquery.com/jquery.min.js"></script>
+<script src="a_js_character.js"></script>
+
+
+</body>
+
+</html>
