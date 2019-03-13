@@ -5,8 +5,12 @@
 	<button type="button" id="startstop">Stop</button>
 </div>
 
+<div>
 <canvas id="myCanvas" width="1024" height="768" style="border:1px solid #d3d3d3; background-color:black;">
 Your browser does not support the HTML5 canvas tag.</canvas>
+	<div id="gen_status" style="float: right; width: 300px;">
+	</div>
+</div>
 
 
 
@@ -21,6 +25,8 @@ btn.addEventListener("click", function(e){
 	else
 		btn.innerText = "Start";
 });
+
+var div_status = document.getElementById("gen_status");
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
@@ -81,8 +87,8 @@ function gen_map(width, height, fill_to)
 	for (var i = 0; i < width * height; ++i)
 		map.cells[i] = [0, 0];
 	
-	var cx = irandom_range(0, map.w);
-	var cy = irandom_range(0, map.h);
+	var cx = Math.floor( map.w * 0.5 );//irandom_range(0, map.w);
+	var cy = Math.floor( map.h * 0.5 );//irandom_range(0, map.h);
 	map.cells[cy * map.w + cx] = [1, 0];
 	
 	var filled = 0;
@@ -125,6 +131,47 @@ function gen_map(width, height, fill_to)
 	return map;		
 }
 
+function surface_areas(map)
+{
+	var is_room = function(x, y, map)
+	{
+		if (x < 0 || x >= map.w || y < 0 || y >= map.h) return false;
+		return map.cells[y * map.w + x][0] == 1;
+	};
+	
+	var inner = 0;
+	var outer = 0;
+	var num2 = 0;
+	var num3 = 0;
+	var num4 = 0;
+	
+	for (var r = 0; r < map.h; ++r)
+	{
+		for (var c = 0; c < map.w; ++c)
+		{
+			if (is_room(c, r, map))
+			{
+				var in_count = (       0 +
+					is_room(c, r-1, map) +
+					is_room(c, r+1, map) +
+					is_room(c-1, r, map) +
+					is_room(c+1, r, map)
+				);
+				
+				inner += in_count;
+				outer += (4 - in_count);				
+				
+				if (in_count == 2) ++num2;
+				else if (in_count == 3) ++num3;
+				else if (in_count == 4) ++num4;
+			}
+		}
+	}
+	
+	console.log("inner: " + inner + ", outer: " + outer + "nums: " + JSON.stringify([num2, num3, num4]));
+	return [inner, outer, num2, num3, num4];
+}
+
 function draw_map(ctx, map, x, y)
 {
 	for (var r = 0; r < map.h; ++r)
@@ -132,7 +179,7 @@ function draw_map(ctx, map, x, y)
 		for (var c = 0; c < map.w; ++c)
 		{
 			var cell = map.cells[r * map.w + c];
-			ctx.fillStyle = cell[0] == 1 ? "#ffffff" : "#999999";
+			ctx.fillStyle = cell[0] == 1 ? "#ffffff" : "#000"; //"#999999";
 			ctx.fillRect( x + c * 50, y + r * 25, 45, 20 );
 		}
 	}
@@ -145,9 +192,34 @@ function getCursorPosition(canvas, event) {
     console.log("x: " + x + " y: " + y);
 }
 
+function find_good_map(w, h, nr)
+{
+	var map = gen_map(w, h, nr);
+	var surf = surface_areas(map);
+	var diff = surf[0] - surf[1];
+	//while( ( diff < 10 || diff > 30 ) && surf[2] > 15 )
+	
+	var tries = 0;
+	//while(surf[1] + 20 < surf[0] )			
+	//while (( diff > 30 || surf[2] > 15 ) && tries++ < 1000 )
+	while ( tries++ < 1000 && (surf[2] > 15 || surf[4] > 1 || surf[3] > 14))
+	{
+		console.log('bad diff: ' + diff);
+		map = gen_map(w, h, nr);
+		surf = surface_areas(map);
+		diff = surf[0] - surf[1];
+		
+	}
+	//if (tries > 1000) document.body.innerHTML += "<div>Failed to generater map within given parameters</div>";
+	if (tries > 1000) div_status.innerHTML = "Failed to generate map within given parameters";
+	else div_status.innerHTML = JSON.stringify( surf, null, "<br/>" );
+	console.log("good diff: " + diff);
+	return map;
+}
+
 canvas.addEventListener("mousedown", function(e){ getCursorPosition(canvas, e); } );
 
-var gMap = gen_map(10, 10, 30);
+var gMap = find_good_map(10, 10, 30); //gen_map(10, 10, 30);
 
 function loop()
 {
@@ -166,7 +238,9 @@ function loop()
 		fps = frame_count;
 		frame_count = 0;
 		if (gGenerating)
-			gMap = gen_map(10, 10, 30);
+		{
+			gMap = find_good_map(10, 10, 30);
+		}
 	}
 	
 	ctx.fillStyle = "#ffffff";
@@ -188,209 +262,6 @@ function loop()
 	
 	setTimeout(loop, 1000 / 60);
 }
-
-function draw_transformed(point_list, transform)
-{
-	for(var i = 0; i < point_list.length; ++i)
-    {
-    	var p = point_list[i];
-    	if ("color" in p)
-        	ctx.fillStyle = p.color;
-        
-		
-		var z = point2d(mat_vec_mult(transform, [p.x, p.y, 1.0]));
-       	//ctx.fillRect(p.x-2 + Math.sin(run_time*2)*10, p.y-2, 5, 5);
-		ctx.fillRect(z.x-2, z.y-2, 5, 5);
-    }
-}
-
-// EXAMPLES ////////////////////
-
-function ex_simple_rotation(time)
-{
-	return mat2d_rotate(time);
-}
-function ex_translate(time, amount)
-{
-	var s = Math.sin(time) * amount;
-	var t = Math.sin(time+0.5) * amount;
-	return mat2d_translate(s, t);
-}
-function ex_scale(time, amount)
-{
-	var s = Math.sin(time) * 0.5 + 0.5
-	var t = Math.sin(time+0.5) * 0.5 + 0.5;
-	s = s * amount + 1.0;
-	t = t * amount + 1.0;
-	return mat2d_scale(s, t);
-}
-function ex_scale_center(time, amount, center)
-{
-	var sc = ex_scale(time, amount);
-	var m = mat2d_translate(-center.x, -center.y);
-	var m2= mat2d_translate(center.x, center.y);
-	
-	return mat3x3_mult(m2, mat3x3_mult(sc, m));	
-}
-function ex_rotate_center(time, center)
-{
-	var r = mat2d_rotate(time);
-	var t0 = mat2d_translate(-center.x, -center.y);
-	var t1 = mat2d_translate(center.x, center.y);
-	
-	return mat3x3_mult(t1, mat3x3_mult(r, t0));
-}
-function ex_planets(time, center)
-{
-	var outs = [];
-	
-	var p0 = mat2d_translate(512, 384)
-	
-	var p1 = mat3x3_multX( [
-		//p0,
-		mat2d_translate(p0[0][2], p0[1][2]),
-		mat2d_rotate(time), // orbital rotation
-		mat2d_translate(250, 0) // orbital radius
-		//mat2d_rotate(time*1.2), // spin
-	]);
-	
-	var p2 = mat3x3_multX( [
-		//p1,
-		mat2d_translate(p1[0][2], p1[1][2]),
-		mat2d_rotate( -time*5 + 10 ), // orbital rotation
-		mat2d_translate( 100, 0 ) // orbital radius
-	]);
-	
-	var p3 = mat3x3_multX( [
-		mat2d_translate(p0[0][2], p0[1][2]),
-		mat2d_rotate(time),
-		mat2d_translate(-250, 0)
-	]);
-	
-	var spin_centered = function(transform, theta, center, scale) {
-		scale = typeof scale != "undefined" ?  scale : 1;
-		
-		return mat3x3_multX([
-			mat2d_translate(transform[0][2], transform[1][2]),
-			mat2d_rotate(theta),
-			mat2d_scale(scale, scale),
-			mat2d_translate(-center.x, -center.y)
-		]);
-	}
-	
-	var s = Math.sin(time) + 2;
-	outs.push(spin_centered(p0, time*5, center));
-	outs.push(spin_centered(p1, time*10, center));
-	outs.push(spin_centered(p2, time*12, {x: center.x, y: center.y})); // off center spin
-	outs.push(spin_centered(p3, time*0, center, s));
-	return outs;
-}
-
-// TRANSFORMATION FUNCTIONS ////////////////////////////////////////
-function mat2d_rotate(rad_theta)
-{
-	var s = Math.sin(rad_theta);
-	var c = Math.cos(rad_theta);
-	return [ [c, -s, 0], [s, c, 0], [0, 0, 1] ];
-}
-
-function mat2d_translate(x, y)
-{
-	return [ [1,0,x], [0,1,y], [0,0,1] ];
-}
-
-function mat2d_scale(x, y)
-{
-	return [ [x, 0, 0], [0, y, 0], [0, 0, 1] ];
-}
-	
-function mat3x3_mult(a, b) {
-	var result = [ 
-		[],//[0,0,0],
-		[],//[0,0,0],
-		[],//[0,0,0] 
-	];
-	result[0] = [
-		a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0],
-		a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1],
-		a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2]
-	];
-	result[1] = [
-		a[1][0] * b[0][0] + a[1][1] * b[1][0] + a[1][2] * b[2][0],
-		a[1][0] * b[0][1] + a[1][1] * b[1][1] + a[1][2] * b[2][1],
-		a[1][0] * b[0][2] + a[1][1] * b[1][2] + a[1][2] * b[2][2]
-	];
-	result[2] = [
-		a[2][0] * b[0][0] + a[2][1] * b[1][0] + a[2][2] * b[2][0],
-		a[2][0] * b[0][1] + a[2][1] * b[1][1] + a[2][2] * b[2][1],
-		a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2]
-	];
-	return result;
-		
-	/*
-	for (var i = 0; i < a.length; ++i)
-	{
-		var row = a[i];
-		for ( var j = 0; j < row.length; ++j )
-		{
-			result[i][j] = 0;
-			for ( var col = 0; col < b.length; ++col )
-			{
-			}
-		}
-	}
-	*/
-}
-function mat3x3_multX( matArray )
-{
-	var result = matArray[0];
-	for (var i = 1; i < matArray.length; ++i)
-		result = mat3x3_mult(result, matArray[i]);
-	return result;
-}
-
-function mat_vec_mult(mat, vec)
-{
-	if ( mat[0].length != vec.length ) {
-		console.log("mat_vec_mult ERROR: dimension mismatch");
-		return Array(mat.length).fill(0);
-	}
-	var out = [];
-	for ( var i = 0; i < mat.length; ++i )
-	{
-		var v = 0;
-		for ( var j = 0; j < vec.length; ++j )
-			v = v + vec[j] * mat[i][j];
-		out.push( v );
-	}
-	return out;
-}
-
-function mat_point2d_mult(mat, point)
-{
-	var result = mat_vec_mult(mat, [point.x, point.y, 1.0]);
-	point.x = result[0];
-	point.y = result[1];
-}
-function point2d(vec){
-	return {x: vec[0], y: vec[1]};
-}
-
-
-var imgData = ctx.createImageData(200, 200);
-
-var i;
-for (i = 0; i < imgData.data.length; i += 4) {
-  imgData.data[i+0] = Math.sin(((i/4)%200)*0.12) * 64 + 127 + 64
-  imgData.data[i+1] = 0;//Math.sin((i%100)*0.01) * 127 + 127;
-  imgData.data[i+2] = 0; //Math.cos((i%100)*0.01) * 127 + 127;
-  imgData.data[i+3] = 255;
-}
-
-
-ctx.fillStyle = "#00aa88";
-//ctx.putImageData(imgData, 10, 10);
-//ctx.fillRect(20, 20, 20, 20);
 
 loop();
 
