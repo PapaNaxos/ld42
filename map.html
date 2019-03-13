@@ -8,14 +8,25 @@
 <div>
 <canvas id="myCanvas" width="1024" height="768" style="border:1px solid #d3d3d3; background-color:black;">
 Your browser does not support the HTML5 canvas tag.</canvas>
-	<div id="gen_status" style="float: right; width: 300px;">
+	<div style="float: right; width: 300px;">
+		<div id="gen_status"></div>
+		<hr/>
+		<div>
+			Controls
+			<ul>
+				<li>R - Generate new map</li>
+				<li>M - Show whole map</li>
+				<li>Arrow keys - move rooms</li>
+			</ul>
+		</div>
+		
 	</div>
 </div>
 
 
 
 <script>
-var gGenerating = true;
+var gGenerating = false;
 
 var btn = document.getElementById("startstop");
 btn.addEventListener("click", function(e){
@@ -145,6 +156,11 @@ function surface_areas(map)
 	var num3 = 0;
 	var num4 = 0;
 	
+	var rooms = {
+		deadends: [],
+		oneways: []
+	};
+	
 	for (var r = 0; r < map.h; ++r)
 	{
 		for (var c = 0; c < map.w; ++c)
@@ -161,26 +177,63 @@ function surface_areas(map)
 				inner += in_count;
 				outer += (4 - in_count);				
 				
-				if (in_count == 2) ++num2;
+				if (in_count == 1)
+					rooms.deadends.push( [c, r] );
+				
+				else if (in_count == 2) 
+				{
+					rooms.oneways.push( [c, r] );
+					++num2;
+				}
 				else if (in_count == 3) ++num3;
 				else if (in_count == 4) ++num4;
 			}
 		}
 	}
 	
-	console.log("inner: " + inner + ", outer: " + outer + "nums: " + JSON.stringify([num2, num3, num4]));
-	return [inner, outer, num2, num3, num4];
+	//console.log("inner: " + inner + ", outer: " + outer + "nums: " + JSON.stringify([num2, num3, num4]));
+	
+	map.metrics = [inner, outer, num2, num3, num4, rooms];
+	
+	return map.metrics;
 }
 
-function draw_map(ctx, map, x, y)
+function draw_map(ctx, map, x, y, all, player_pos)
 {
+	var near_pos = function(x, y, pos) {
+		return Math.abs(x-pos[0]) < 2 && Math.abs(y-pos[1]) < 2;
+	};
+	
+	all = all || false;
+	player_pos = player_pos || [-100, -100];
+	
+	if (all == false)
+	{
+		x = x - (player_pos[0]-1) * 50;
+		y = y - (player_pos[1]-1) * 25;
+	}
+	
+	var colors = [
+		"#000",
+		"#FFF",
+		"#A00"
+	];
+	
 	for (var r = 0; r < map.h; ++r)
 	{
 		for (var c = 0; c < map.w; ++c)
 		{
-			var cell = map.cells[r * map.w + c];
-			ctx.fillStyle = cell[0] == 1 ? "#ffffff" : "#000"; //"#999999";
-			ctx.fillRect( x + c * 50, y + r * 25, 45, 20 );
+			if (all || near_pos(c, r, player_pos))
+			{
+				var cell = map.cells[r * map.w + c];
+				ctx.fillStyle = colors[ cell[0] ];
+				if (player_pos[0] == c && player_pos[1] == r)
+					ctx.fillStyle = "#0A0";
+				//ctx.fillStyle = cell[0] == 0 ? "#ffffff" : "#000"; //"#999999";
+				//if (cell[0] == 2)
+				//	ctx.					
+				ctx.fillRect( x + c * 50, y + r * 25, 45, 20 );
+			}
 		}
 	}
 }
@@ -190,6 +243,8 @@ function getCursorPosition(canvas, event) {
     var x = event.clientX - rect.left;
     var y = event.clientY - rect.top;
     console.log("x: " + x + " y: " + y);
+	
+	
 }
 
 function find_good_map(w, h, nr)
@@ -202,24 +257,89 @@ function find_good_map(w, h, nr)
 	var tries = 0;
 	//while(surf[1] + 20 < surf[0] )			
 	//while (( diff > 30 || surf[2] > 15 ) && tries++ < 1000 )
-	while ( tries++ < 1000 && (surf[2] > 15 || surf[4] > 1 || surf[3] > 14))
+	//while ( tries++ < 1000 && (surf[2] > 15 || surf[4] > 1 || surf[3] > 14))
+	while ( tries++ < 1000 && (surf[2] > 13 || surf[4] > 1 || surf[3] > 17))
+	//while ( tries++ < 1000 && ( (surf[2] + surf[3] + surf[4] > 28) ) )//|| surf[4] > 1) )
 	{
 		console.log('bad diff: ' + diff);
 		map = gen_map(w, h, nr);
 		surf = surface_areas(map);
-		diff = surf[0] - surf[1];
-		
+		diff = surf[0] - surf[1];	
 	}
 	//if (tries > 1000) document.body.innerHTML += "<div>Failed to generater map within given parameters</div>";
 	if (tries > 1000) div_status.innerHTML = "Failed to generate map within given parameters";
-	else div_status.innerHTML = JSON.stringify( surf, null, "<br/>" );
-	console.log("good diff: " + diff);
+	else div_status.innerHTML = JSON.stringify( surf, null, " " ) + "<br/>Tries: " + tries;
+	//console.log("good diff: " + diff);
 	return map;
 }
 
-canvas.addEventListener("mousedown", function(e){ getCursorPosition(canvas, e); } );
+function find_start_pos(map)
+{
+	if ("metrics" in map == false)
+		surface_areas(map);
+		
+	var rooms = map.metrics[5];
+	if (rooms.deadends.length > 0)
+		return rooms.deadends[0];
+	else
+		return rooms.oneways[ irandom_range(0, rooms.oneways.length-1) ];
+}
+
+function attempt_move(ox, oy)
+{
+	ox = gPos[0] + ox;
+	oy = gPos[1] + oy;
+	
+	if (ox >= 0 && ox < gMap.w && oy >= 0 && oy < gMap.h)
+	{
+		var cell = gMap.cells[oy * gMap.w + ox];
+		if (cell[0] == 1)
+		{
+			//cell[0] = 2; // visited (can't go back here again)
+			
+			gMap.cells[gPos[1] * gMap.w + gPos[0]][0] = 2; // visited, can't go back here again
+			
+			gPos[0] = ox;
+			gPos[1] = oy;
+		}
+	}
+}
+
+
 
 var gMap = find_good_map(10, 10, 30); //gen_map(10, 10, 30);
+
+var gPos = find_start_pos(gMap);
+
+var gDrawMap = false;
+
+canvas.addEventListener("mousedown", function(e){ canvas.focus(); getCursorPosition(canvas, e); } );
+
+document.addEventListener("keyup", function(e){
+	console.log("Keyup: " + e.which);
+	switch(e.which) {
+		case 37: // left
+			attempt_move(-1, 0);
+		break;
+		case 38: // up
+			attempt_move(0, -1);
+		break;
+		case 39: // right
+			attempt_move(1, 0);
+		break;
+		case 40: // down
+			attempt_move(0, 1);
+		break;
+		
+		case 77: // M 
+			gDrawMap = !gDrawMap;
+		break;
+		
+		case 82: // R
+			gGenerating = true;
+		break;
+	}
+});
 
 function loop()
 {
@@ -240,6 +360,8 @@ function loop()
 		if (gGenerating)
 		{
 			gMap = find_good_map(10, 10, 30);
+			gPos = find_start_pos(gMap);
+			gGenerating = false;
 		}
 	}
 	
@@ -250,7 +372,7 @@ function loop()
 	//ctx.fillStyle = "#ff0000";
 	//ctx.fillRect(box.x, box.y, box.w, box.h);
 	
-	draw_map(ctx, gMap, 100, 100);
+	draw_map(ctx, gMap, 100, 100, gDrawMap, gPos);
 	
 	
 	ctx.fillStyle = "#FFFFFF";
