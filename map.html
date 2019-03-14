@@ -8,14 +8,14 @@
 <div>
 <canvas id="myCanvas" width="1024" height="768" style="border:1px solid #d3d3d3; background-color:black;">
 Your browser does not support the HTML5 canvas tag.</canvas>
-	<div style="float: right; width: 300px;">
+	<div style="float: right; width: 500px;">
 		<div id="gen_status"></div>
 		<hr/>
 		<div>
 			Controls
 			<ul>
 				<li>R - Generate new map</li>
-				<li>M - Show whole map</li>
+				<li>M - Adjust Map View (All, 1, 2, 3 rooms away</li>
 				<li>Arrow keys - move rooms</li>
 			</ul>
 		</div>
@@ -215,21 +215,21 @@ function surface_areas(map)
 	return map.metrics;
 }
 
-function draw_map(ctx, map, x, y, all, player_pos)
+function draw_map(ctx, map, x, y, range, player_pos)
 {
-	var near_pos = function(x, y, pos) {
-		return Math.abs(x-pos[0]) < 2 && Math.abs(y-pos[1]) < 2;
+	var near_pos = function(x, y, pos, rng) {
+		return Math.abs(x-pos[0]) <= rng && Math.abs(y-pos[1]) <= rng;
 	};
 	
 	var bbox = map.metrics[6];
 	
-	all = all || false;
+	//all = all || false;
 	player_pos = player_pos || [-100, -100];
 	
-	if (all == false)
+	if (range != false)
 	{
-		x = x - (player_pos[0]-1) * 50;
-		y = y - (player_pos[1]-1) * 25;
+		x = x - (player_pos[0]-range) * 50;
+		y = y - (player_pos[1]-range) * 25;
 	}
 	else
 	{
@@ -247,7 +247,7 @@ function draw_map(ctx, map, x, y, all, player_pos)
 	{
 		for (var c = 0; c < map.w; ++c)
 		{
-			if (all || near_pos(c, r, player_pos))
+			if (range == 0 || near_pos(c, r, player_pos, range))
 			{
 				var cell = map.cells[r * map.w + c];
 				ctx.fillStyle = colors[ cell[0] ];
@@ -334,7 +334,8 @@ var gMap = find_good_map(20, 20, 30); //gen_map(10, 10, 30);
 
 var gPos = find_start_pos(gMap);
 
-var gDrawMap = false;
+//var gDrawMap = false;
+var gDrawRange = 1;
 
 canvas.addEventListener("mousedown", function(e){ canvas.focus(); getCursorPosition(canvas, e); } );
 
@@ -355,7 +356,8 @@ document.addEventListener("keyup", function(e){
 		break;
 		
 		case 77: // M 
-			gDrawMap = !gDrawMap;
+			//gDrawMap = !gDrawMap;
+			gDrawRange = (gDrawRange+1)%4;
 		break;
 		
 		case 82: // R
@@ -395,7 +397,7 @@ function loop()
 	//ctx.fillStyle = "#ff0000";
 	//ctx.fillRect(box.x, box.y, box.w, box.h);
 	
-	draw_map(ctx, gMap, 100, 100, gDrawMap, gPos);
+	draw_map(ctx, gMap, 100, 100, gDrawRange, gPos);
 	
 	
 	ctx.fillStyle = "#FFFFFF";
