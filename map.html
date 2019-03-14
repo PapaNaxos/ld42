@@ -88,6 +88,8 @@ function gen_map(width, height, fill_to)
 		connections: []
 	};
 	
+	
+	
 	var is_cell_empty = function(x, y, map)
 	{
 		if ( x >= 0 && x < map.w && y >= 0 && y < map.h)
@@ -102,6 +104,7 @@ function gen_map(width, height, fill_to)
 	var cy = Math.floor( map.h * 0.5 );//irandom_range(0, map.h);
 	map.cells[cy * map.w + cx] = [1, 0];
 	
+	var filled_cells = [[cx, cy]];
 	var filled = 0;
 	while (filled < fill_to)
 	{
@@ -116,7 +119,16 @@ function gen_map(width, height, fill_to)
 		var dir;
 		if (choices.length > 0)
 		{
-			dir = choices[ irandom_range(0, choices.length) ];
+			var backtrack = Math.random();
+			if (backtrack < 0.3 || (backtrack < 0.5 && choices.length == 1))
+			{
+				var rnd = irandom_range(0, filled_cells.length-1);
+				cx = filled_cells[rnd][0];
+				cy = filled_cells[rnd][1];
+				continue;
+			}
+			else
+				dir = choices[ irandom_range(0, choices.length) ];			
 		}
 		else
 		{
@@ -133,6 +145,7 @@ function gen_map(width, height, fill_to)
 		{
 			map.cells[ncy * map.w + ncx][0] = 1;
 			++filled;
+			filled_cells.push( [ncx, ncy] );
 		}		
 		
 		cx = ncx;
@@ -161,12 +174,16 @@ function surface_areas(map)
 		oneways: []
 	};
 	
+	var bbox = [map.w, map.h];
 	for (var r = 0; r < map.h; ++r)
 	{
 		for (var c = 0; c < map.w; ++c)
 		{
 			if (is_room(c, r, map))
 			{
+				bbox[0] = Math.min(bbox[0], c);
+				bbox[1] = Math.min(bbox[1], r);
+				
 				var in_count = (       0 +
 					is_room(c, r-1, map) +
 					is_room(c, r+1, map) +
@@ -193,7 +210,7 @@ function surface_areas(map)
 	
 	//console.log("inner: " + inner + ", outer: " + outer + "nums: " + JSON.stringify([num2, num3, num4]));
 	
-	map.metrics = [inner, outer, num2, num3, num4, rooms];
+	map.metrics = [inner, outer, num2, num3, num4, rooms, bbox]; // this is getting nasty
 	
 	return map.metrics;
 }
@@ -204,6 +221,8 @@ function draw_map(ctx, map, x, y, all, player_pos)
 		return Math.abs(x-pos[0]) < 2 && Math.abs(y-pos[1]) < 2;
 	};
 	
+	var bbox = map.metrics[6];
+	
 	all = all || false;
 	player_pos = player_pos || [-100, -100];
 	
@@ -212,9 +231,14 @@ function draw_map(ctx, map, x, y, all, player_pos)
 		x = x - (player_pos[0]-1) * 50;
 		y = y - (player_pos[1]-1) * 25;
 	}
+	else
+	{
+		x = x - (bbox[0]-1) * 50;
+		y = y - (bbox[1]-1) * 25;
+	}
 	
 	var colors = [
-		"#000",
+		"#666",
 		"#FFF",
 		"#A00"
 	];
@@ -242,9 +266,7 @@ function getCursorPosition(canvas, event) {
     var rect = canvas.getBoundingClientRect();
     var x = event.clientX - rect.left;
     var y = event.clientY - rect.top;
-    console.log("x: " + x + " y: " + y);
-	
-	
+    console.log("x: " + x + " y: " + y);	
 }
 
 function find_good_map(w, h, nr)
@@ -258,7 +280,8 @@ function find_good_map(w, h, nr)
 	//while(surf[1] + 20 < surf[0] )			
 	//while (( diff > 30 || surf[2] > 15 ) && tries++ < 1000 )
 	//while ( tries++ < 1000 && (surf[2] > 15 || surf[4] > 1 || surf[3] > 14))
-	while ( tries++ < 1000 && (surf[2] > 13 || surf[4] > 1 || surf[3] > 17))
+	//while ( tries++ < 1000 && (surf[2] > 13 || surf[4] > 1 || surf[3] > 17))
+	while ( tries++ < 1000 && (surf[4] != 1 || (surf[2]+surf[3]) > 26 || surf[2] > 10) )
 	//while ( tries++ < 1000 && ( (surf[2] + surf[3] + surf[4] > 28) ) )//|| surf[4] > 1) )
 	{
 		console.log('bad diff: ' + diff);
@@ -307,7 +330,7 @@ function attempt_move(ox, oy)
 
 
 
-var gMap = find_good_map(10, 10, 30); //gen_map(10, 10, 30);
+var gMap = find_good_map(20, 20, 30); //gen_map(10, 10, 30);
 
 var gPos = find_start_pos(gMap);
 
@@ -359,7 +382,7 @@ function loop()
 		frame_count = 0;
 		if (gGenerating)
 		{
-			gMap = find_good_map(10, 10, 30);
+			gMap = find_good_map(20, 20, 30);
 			gPos = find_start_pos(gMap);
 			gGenerating = false;
 		}
